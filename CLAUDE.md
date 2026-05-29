@@ -66,6 +66,21 @@ class MyConverter(DocumentConverter):
 
 `accepts()` is called with a seekable stream; always reset the stream position (`file_stream.seek(0)`) before reading in `convert()`.
 
+### Converter Utilities
+
+`src/markitdown/converter_utils/` provides shared helpers used by converter implementations (not part of the public API):
+- `converter_utils/docx/math/` — renders OMML (Office Math Markup Language) equations to LaTeX for DOCX/PPTX converters
+- `converter_utils/docx/pre_process.py` — DOM pre-processing for DOCX before markdownification
+
+### Public API / Exceptions
+
+The public surface exported from `markitdown.__init__` includes the exception hierarchy, useful when writing plugins or handling errors:
+- `MarkItDownException` — base exception
+- `MissingDependencyException` — raised when an optional dep is absent
+- `FailedConversionAttempt` — a converter tried but could not complete
+- `FileConversionException` — I/O or format-level conversion failure
+- `UnsupportedFormatException` — no converter accepted the input
+
 ### Plugin System
 
 Plugins are discovered lazily via Python entry points (`markitdown.plugin` group). A plugin package must expose a `register_converters(markitdown_instance, **kwargs)` function. See `packages/markitdown-sample-plugin` for the complete pattern. Plugins are loaded once on first conversion call via `_load_plugins()`.
