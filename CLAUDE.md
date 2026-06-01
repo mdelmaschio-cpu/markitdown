@@ -110,6 +110,43 @@ Test files mirror the feature surface:
 
 CI runs on Python 3.10, 3.11, and 3.12 via GitHub Actions (`.github/workflows/tests.yml`).
 
+## Writing a New Converter
+
+Quick reference for adding support for a new file format:
+
+1. Create `src/markitdown/converters/my_format.py`
+2. Subclass `DocumentConverter` and implement `accepts()` and `convert()`
+3. Guard optional dep imports at the top of the file with try/except
+4. Register in `_markitdown.py` via `self.register_converter(MyConverter())`
+5. Set `PRIORITY_SPECIFIC_FILE_FORMAT` (0.0) for format-specific converters
+6. Add a test file to `tests/test_files/` and a test case in `test_module_vectors.py`
+7. Document the optional dependency in `pyproject.toml` under the appropriate extras group
+
+Pattern for optional dependency guard:
+```python
+try:
+    import my_optional_dep
+    MY_DEP_AVAILABLE = True
+except ImportError:
+    MY_DEP_AVAILABLE = False
+```
+
+In `accepts()`: return `False` immediately if `not MY_DEP_AVAILABLE`.
+
+## markitdown-mcp
+
+The `packages/markitdown-mcp/` package wraps the core library as an MCP server for Claude Desktop. Run it from `packages/markitdown-mcp/`:
+
+```bash
+pip install hatch
+hatch run serve        # start MCP server
+hatch test             # run MCP-specific tests
+```
+
+The MCP server exposes `convert_to_markdown(uri)` as a tool. Its test suite is separate from the core library tests.
+
 ## Security Considerations
 
 From `SECURITY.md`: converters perform I/O operations on provided files. Use `defusedxml` for XML parsing. Prefer narrow API surface over broad file system access. Do not pass unsanitized user input directly to shell commands or external processes.
+
+When writing converters that invoke external processes (e.g., for audio transcription), use `subprocess.run()` with a fixed argument list — never pass user-controlled strings to `shell=True`.
